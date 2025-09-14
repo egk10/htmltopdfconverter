@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>HTML to PDF Converter</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    body { font-family: system-ui, sans-serif; margin: 2rem; max-width: 640px; }
+    h1 { font-size: 1.6rem; }
+    form { border: 1px solid #ccc; padding: 1rem 1.5rem; border-radius: 8px; background: #fafafa; }
+    .row { margin-bottom: 1rem; }
+    label { display: block; font-weight: 600; margin-bottom: 0.25rem; }
+    input[type=file] { width: 100%; }
+    button { background: #2563eb; color: #fff; border: none; padding: 0.6rem 1.2rem; border-radius: 6px; cursor: pointer; font-size: 1rem; }
+    button:disabled { background: #8da8d9; cursor: not-allowed; }
+    #status { margin-top: 1rem; font-size: 0.9rem; }
+    footer { margin-top: 3rem; font-size: 0.75rem; color: #555; }
+    progress { width: 100%; height: 14px; }
+  </style>
+</head>
+<body>
+  <h1>HTML to PDF Converter</h1>
+  <p>Upload an <code>.html</code> file <em>or</em> switch to the inline editor to paste / edit HTML and preview before exporting.</p>
+  <div style="margin:1rem 0;">
+    <button id="modeUpload" type="button">Upload Mode</button>
+    <button id="modeEdit" type="button" style="margin-left:.5rem;">Editor Mode</button>
+  </div>
+
+  <form id="convertForm" data-mode="upload">
+    <div class="row">
+      <label for="htmlFile">HTML File</label>
+      <input id="htmlFile" name="htmlFile" type="file" accept=".html,.htm" required />
+    </div>
+    <div class="row" id="maxPagesRowUpload">
+      <label for="maxPagesUpload">Max Pages (scaling heuristic)</label>
+      <input id="maxPagesUpload" name="maxPages" type="number" min="1" value="2" />
+    </div>
+    <button id="submitBtn" type="submit">Convert to PDF</button>
+    <div id="status"></div>
+    <div class="row" id="progressRow" style="display:none;">
+      <progress id="uploadProgress" value="0" max="100"></progress>
+    </div>
+  </form>
+
+  <section id="editorSection" style="display:none; margin-top:2rem;">
+    <div class="row">
+      <label for="editorMaxPages">Max Pages (scaling heuristic)</label>
+      <input id="editorMaxPages" type="number" min="1" value="2" />
+    </div>
+    <div class="row">
+      <label for="htmlEditor">HTML Source</label>
+      <textarea id="htmlEditor" style="width:100%; height:240px; font-family: monospace; resize:vertical;" placeholder="<h1>Hello</h1>Type or paste your HTML here..."></textarea>
+    </div>
+    <div class="row">
+      <button id="updatePreview" type="button">Update Preview</button>
+      <button id="downloadFromEditor" type="button" style="margin-left:.5rem;">Download PDF</button>
+      <span id="editorStatus" style="margin-left:1rem; font-size:0.9rem;"></span>
+    </div>
+    <div class="row">
+      <label>Live Preview</label>
+      <iframe id="previewFrame" title="HTML Preview" style="width:100%; height:400px; border:1px solid #ccc; background:#fff;"></iframe>
+    </div>
+  </section>
+
+  <footer>
+    <p>Conversion occurs locally on the server. Do not upload sensitive data unless you trust this deployment.</p>
+  </footer>
+
+  <script>
+    const form = document.getElementById('convertForm');
+    const statusEl = document.getElementById('status');
+    const submitBtn = document.getElementById('submitBtn');
+    const progressRow = document.getElementById('progressRow');
+    const progressBar = document.getElementById('uploadProgress');
+    const modeUploadBtn = document.getElementById('modeUpload');
+    const modeEditBtn = document.getElementById('modeEdit');
+    const editorSection = document.getElementById('editorSection');
+    const htmlEditor = document.getElementById('htmlEditor');
+    const updatePreviewBtn = document.getElementById('updatePreview');
+    const previewFrame = document.getElementById('previewFrame');
+    const downloadFromEditorBtn = document.getElementById('downloadFromEditor');
+    const editorStatus = document.getElementById('editorStatus');
+    const editorMaxPages = document.getElementById('editorMaxPages');
+    const maxPagesUpload = document.getElementById('maxPagesUpload');
+
+    function setMode(mode){
+      if(mode==='upload'){
+        form.style.display='block';
+        editorSection.style.display='none';
+        form.dataset.mode='upload';
+      } else {
+        form.style.display='none';
+        editorSection.style.display='block';
+        form.dataset.mode='editor';
+        // Lazy initialize preview if empty
+        if(!htmlEditor.value.trim()){
+          htmlEditor.value='<!DOCTYPE html>\n<html><head><meta charset="utf-8"><title>Sample</title><style>body{font-family:Arial;margin:2rem;}h1{color:#2563eb;}</style></head><body><h1>Sample Document</h1><p>Edit this content then click Update Preview or Download PDF.</p></body></html>';
+          updatePreview();
+        }
+      }
+    }
+
+    modeUploadBtn.addEventListener('click',()=>setMode('upload'));
+    modeEditBtn.addEventListener('click',()=>setMode('editor'));
+
+    function updatePreview(){
+      const doc = previewFrame.contentDocument;
+      doc.open();
+      doc.write(htmlEditor.value);
+      doc.close();
+    }
+    updatePreviewBtn.addEventListener('click', ()=>{ updatePreview(); editorStatus.textContent='Preview updated'; setTimeout(()=>editorStatus.textContent='',1500); });
+
+    async function downloadEditorPdf(){
+      editorStatus.textContent='Converting...';
+      downloadFromEditorBtn.disabled=true;
+      try {
+        const response = await fetch('/convert-text', {
+          method:'POST',
+          headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({ html: htmlEditor.value, name: 'editor-document', maxPages: editorMaxPages.value || 2 })
+        });
+        if(!response.ok){
+          const err = await response.json().catch(()=>({}));
+          throw new Error(err.error || 'Conversion failed');
+        }
+        const blob = await response.blob();
+        const url = URL.createObjectURL(blob);
+        const a=document.createElement('a');
+        a.href=url; a.download='editor-document.pdf';
+        document.body.appendChild(a); a.click(); a.remove();
+        URL.revokeObjectURL(url);
+        editorStatus.textContent='Downloaded PDF';
+      } catch(e){
+        editorStatus.textContent='Error: '+e.message;
+      } finally {
+        downloadFromEditorBtn.disabled=false;
+      }
+    }
+    downloadFromEditorBtn.addEventListener('click', downloadEditorPdf);
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      statusEl.textContent = '';
+      const fileInput = document.getElementById('htmlFile');
+      if (!fileInput.files.length) return;
+      submitBtn.disabled = true;
+
+  const formData = new FormData();
+  formData.append('htmlFile', fileInput.files[0]);
+  if(maxPagesUpload.value) formData.append('maxPages', maxPagesUpload.value);
+
+      try {
+        statusEl.textContent = 'Uploading & converting...';
+        progressRow.style.display = 'block';
+
+        const response = await fetch('/convert', {
+          method: 'POST',
+          body: formData
+        });
+
+        if (!response.ok) {
+          const err = await response.json().catch(() => ({}));
+          throw new Error(err.error || 'Conversion failed');
+        }
+
+        const blob = await response.blob();
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = (fileInput.files[0].name.replace(/\.[^.]+$/, '') || 'output') + '.pdf';
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
+        statusEl.textContent = 'Done! PDF downloaded.';
+      } catch (err) {
+        statusEl.textContent = 'Error: ' + err.message;
+      } finally {
+        submitBtn.disabled = false;
+        progressRow.style.display = 'none';
+        progressBar.value = 0;
+      }
+    });
+  </script>
+</body>
+</html>
