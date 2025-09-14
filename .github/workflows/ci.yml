@@ -1,0 +1,45 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Launch server (background)
+        run: |
+          PORT=3100 node src/server.js &
+          echo $! > server.pid
+          sleep 5
+
+      - name: Smoke test /health
+        run: curl -f http://localhost:3100/health
+
+      - name: Smoke test /convert-text
+        run: |
+          curl -s -o test.pdf -H 'Content-Type: application/json' \
+            -d '{"html":"<h1>CI Test</h1><p>Paragraph</p>","name":"ci-doc","maxPages":2}' \
+            http://localhost:3100/convert-text
+          test -s test.pdf
+
+      - name: List generated directory
+        run: ls -l generated || true
+
+      - name: Stop server
+        run: kill $(cat server.pid)
+

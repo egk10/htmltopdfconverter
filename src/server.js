@@ -33,7 +33,10 @@ async function createPdfFromHtmlString(htmlContent, baseName, maxPages = DEFAULT
   const tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), 'html2pdf-'));
   const htmlPath = path.join(tmpDir, `upload-${jobId}.html`);
   await fs.writeFile(htmlPath, htmlContent, 'utf8');
-  const browser = await puppeteer.launch({ args: ['--no-sandbox', '--disable-setuid-sandbox'] });
+  const execPath = process.env.CHROMIUM_PATH || process.env.PUPPETEER_EXECUTABLE_PATH;
+  const launchOptions = { args: ['--no-sandbox', '--disable-setuid-sandbox'] };
+  if (execPath) launchOptions.executablePath = execPath;
+  const browser = await puppeteer.launch(launchOptions);
   try {
     const page = await browser.newPage();
     await page.goto('file://' + htmlPath, { waitUntil: 'networkidle0' });

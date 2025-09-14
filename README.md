@@ -1,5 +1,7 @@
 # HTML to PDF Uploader
 
+![CI](https://github.com/egk10/htmltopdfconverter/actions/workflows/ci.yml/badge.svg)
+
 Simple Node.js service + dual-mode frontend (upload or inline editor) to convert HTML to PDF using headless Chromium (Puppeteer). PDFs are streamed to the browser and stored in `generated/` with a unique suffix.
 
 ## Features
@@ -11,12 +13,12 @@ Simple Node.js service + dual-mode frontend (upload or inline editor) to convert
 - API endpoint `/convert-text` for programmatic or editor use
 - Port auto-fallback if 3000 busy; health endpoint `/health`
 
-## Install
+## Install (Local)
 ```bash
 npm install
 ```
 
-## Run
+## Run (Local)
 ```bash
 npm start
 # Visit http://localhost:3000
@@ -56,6 +58,29 @@ curl -X POST http://localhost:3000/convert-text \
 - Letter format only (changeable in code). A4 or custom size would need adaptation (and height constant recalibration).
 - Scaling uses an approximate printable height of 1056px (Letter minus margins at 96 DPI). Adjust if you change margins or DPI context.
 - White space gaps can still occur if original markup imposes page breaks (large block elements, explicit CSS page-breaks, etc.).
+ - Generated PDFs are not stored in git (ignored); only a `.gitkeep` placeholder remains.
+
+## Docker
+Build image:
+```bash
+docker build -t htmltopdf:latest .
+```
+Run container:
+```bash
+docker run --rm -p 3000:3000 \
+	-e MAX_PAGES=2 \
+	-e TWO_PAGE_FIT=true \
+	-v $(pwd)/generated:/app/generated \
+	htmltopdf:latest
+```
+Then open http://localhost:3000
+
+Provide custom Chromium path (if using base image with different binary):
+```bash
+docker run --rm -p 3000:3000 \
+	-e PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium \
+	htmltopdf:latest
+```
 
 ## Environment Variables
 - `PORT` (default `3000`): server listen port.
@@ -83,4 +108,4 @@ curl -X POST http://localhost:3000/convert-text \
 - Add rate limiting & auth if exposed publicly.
 
 ## License
-Internal / personal use example. Add a proper license if distributing.
+MIT License (see `LICENSE`).

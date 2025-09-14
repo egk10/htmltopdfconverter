@@ -24,3 +24,8 @@ Thumbs.db
 
 # Misc
 coverage/
+
+# Generated PDFs
+generated/*.pdf
+*.pdf
+!generated/.gitkeep
