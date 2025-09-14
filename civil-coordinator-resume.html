@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Elie Georges Kfouri - Resume</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: Arial, sans-serif;
+            font-size: 11pt;
+            line-height: 1.22;
+            color: #000;
+            margin: 0 auto;
+            padding: 0.3in;
+        }
+        
+        /* Header */
+        .header {
+            text-align: center;
+            margin-bottom: 14px;
+            padding-bottom: 4px;
+            border-bottom: 1px solid #000;
+        }
+        
+        h1 {
+            font-size: 19pt;
+            margin-bottom: 4px;
+        }
+        
+        .contact {
+            font-size: 10pt;
+        }
+        
+        /* Section Headers */
+        h2 {
+            font-size: 12pt;
+            margin: 10px 0 4px;
+            border-bottom: 1px solid #000;
+            padding-bottom: 1px;
+            text-transform: uppercase;
+        }
+        
+        /* Job entries */
+        .job { margin-bottom: 10px; }
+        
+        .job-header { margin-bottom: 4px; }
+        
+        .job-title {
+            font-weight: bold;
+            display: inline;
+        }
+        
+        .dates {
+            float: right;
+            font-size: 10pt;
+        }
+        
+        .company {
+            font-style: italic;
+            font-size: 10pt;
+            margin-bottom: 3px;
+        }
+        
+        /* Lists */
+        ul {
+            margin-left: 18px;
+            margin-bottom: 6px;
+        }
+        
+        li { margin-bottom: 0; }
+        
+        /* Other sections */
+        .summary {
+            margin-bottom: 8px;
+            text-align: justify;
+        }
+        .education-item, .cert-item { margin-bottom: 6px; }
+        
+        .skills-container {
+            column-count: 2;
+            column-gap: 18px;
+            margin-bottom: 6px;
+        }
+        
+        .skill-category { break-inside: avoid; margin-bottom: 6px; }
+        
+        /* Page break for printing */
+        @media print {
+            .page-break {
+                page-break-before: always;
+            }
+        }
+        
+        .clearfix::after {
+            content: "";
+            display: table;
+            clear: both;
+        }
+    </style>
+</head>
+<body>
+    <!-- PAGE 1 -->
+    <div class="header">
+        <h1>ELIE GEORGES KFOURI</h1>
+        <div class="contact">
+            eliegkfouri@gmail.com | 437-655-1527 | M5V 3K8 - Toronto, ON, Canada | linkedin.com/in/elie-kfouri
+        </div>
+    </div>
+
+    <h2>Professional Summary</h2>
+    <div class="summary">
+        Civil engineering professional with 5+ years of construction coordination experience in ICI and residential projects. Recently completed Post-Graduate Certificate in Construction Management from George Brown College (Dean's Honour) with hands-on Canadian construction experience at SKYGRiD. Proven expertise in project scheduling, cost control, quality assurance, and stakeholder coordination. Proficient in construction documentation, RFIs, change orders, and safety compliance. Skilled in developing AI-driven construction management tools using VS Code and Copilot Chat AI Agent to enhance estimation accuracy and project efficiency.
+    </div>
+
+    <h2>Work Experience</h2>
+    
+    <div class="job">
+        <div class="job-header clearfix">
+            <span class="job-title">Estimator Co-Op</span>
+            <span class="dates">Sep 2024 - Dec 2024</span>
+        </div>
+        <div class="company">SKYGRiD Corporate HQ - Mississauga, ON, Canada</div>
+        <ul>
+            <li>Coordinated project schedules and resources for multiple high-value projects including $8.39M Decathlon Warehouse (3,000 m²) and Lakeview Phase 1 (35 stories, 360 units), ensuring timely material delivery and milestone achievement</li>
+            <li>Prepared comprehensive construction documentation including RFIs, change orders, quantity take-offs, and procurement lists using Bluebeam and ConstructConnect, maintaining quality control standards</li>
+            <li>Analyzed 450+ pages of drawings and tender documents, identifying critical elements for accurate cost estimation and competitive bidding, contributing to successful bid wins</li>
+            <li>Managed vendor coordination through BuildingConnected platform, collecting and leveling subcontractor bids, negotiating competitive pricing, and integrating quotes into estimation spreadsheets</li>
+            <li>Conducted detailed quantity take-offs for structural, electrical, and architectural components, ensuring compliance with technical specifications and safety regulations</li>
+            <li>Developed AI-powered estimation tools using VS Code and Copilot Chat AI Agent, creating a proof-of-concept system to leverage historical project data for improved accuracy in quantities and pricing</li>
+            <li>Compiled as-built documentation and quality records, providing management with detailed project analysis, productivity tracking, and month-end reconciliation data</li>
+            <li>Collaborated with internal teams, subcontractors, and stakeholders to resolve technical issues, coordinate site activities, and maintain project schedules within budget constraints</li>
+        </ul>
+    </div>
+
+    <div class="job">
+        <div class="job-header clearfix">
+            <span class="job-title">Project Manager & Operations Manager</span>
+            <span class="dates">Jul 2015 - Dec 2022</span>
+        </div>
+        <div class="company">DECIVIL Construction</div>
+        <ul>
+            <li>Led full-cycle project delivery for multiple residential and institutional developments totaling over $75M, including 16-story high-rise (126 units, $27M) and educational facilities ($13M)</li>
+            <li>Coordinated project schedules, resources, and equipment for construction teams of 25+ workers, ensuring compliance with safety regulations and technical specifications</li>
+            <li>Managed procurement processes, contract negotiations, and vendor relationships, achieving cost reductions while maintaining quality standards across 10+ concurrent projects</li>
+            <li>Implemented quality control procedures, conducted site inspections, and prepared comprehensive project documentation including permits, progress reports, and as-built drawings</li>
+            <li>Oversaw critical infrastructure upgrades and accessibility renovations in 25+ occupied facilities, coordinating construction activities to minimize disruption to daily operations</li>
+        </ul>
+    </div>
+
+    <!-- Forced page break before Key Projects -->
+    <div class="page-break"></div>
+
+    <h2>Key Projects</h2>
+    <div class="job">
+        <div class="job-header">
+            <span class="job-title">GitHub Project: Construction Cost AI - Proof of Concept</span>
+        </div>
+        <div class="company">github.com/egk10/construction-cost-ai-Grok</div>
+        <ul>
+            <li>Developed AI-driven cost estimation system using VS Code and Copilot Chat AI Agent to analyze historical construction data and improve estimation accuracy by leveraging past project quantities and pricing</li>
+            <li>Created interactive web interface with Python FastAPI backend and React frontend, enabling real-time material cost analysis and intelligent labor cost calculations</li>
+            <li>Implemented machine learning models for cost prediction and risk assessment, helping identify potential cost overruns and optimize material selection for construction projects</li>
+        </ul>
+    </div>
+
+    <h2>Education</h2>
+    <div class="education-item">
+        <strong>Post-Graduate Certificate in Construction Management</strong><br>
+        George Brown College - Toronto, ON, Canada<br>
+        Dean's Honour
+    </div>
+    <div class="education-item">
+        <strong>Certificate in Electrical Techniques</strong><br>
+        George Brown College - Toronto, ON, Canada<br>
+        Dean's Honour
+    </div>
+    <div class="education-item">
+        <strong>Bachelor of Civil Engineering</strong><br>
+        Mackenzie University
+    </div>
+
+    <h2>Certifications</h2>
+    <div class="cert-item">• PMP® Certification - Project Management Institute (PMI)</div>
+    <div class="cert-item">• Xactimate Certification</div>
+    <div class="cert-item">• WHMIS Certification</div>
+
+    <h2>Technical Skills</h2>
+    <div class="skills-container">
+        <div class="skill-category">
+            <strong>Construction Software:</strong><br>
+            • Bluebeam (Advanced)<br>
+            • ConstructConnect Takeoff<br>
+            • BuildingConnected<br>
+            • Autodesk Construction Cloud<br>
+            • AutoCAD
+        </div>
+        <div class="skill-category">
+            <strong>Project Management:</strong><br>
+            • MS Project (Scheduling)<br>
+            • MS Excel (Advanced Analytics)<br>
+            • MS Word (Documentation)<br>
+            • Cost Control & Budget Management<br>
+            • Resource Allocation
+        </div>
+    </div>
+    
+    <div>
+        <strong>Technical Competencies:</strong><br>
+        • Construction Drawing & Specification Analysis • RFI & Change Order Management<br>
+        • Quality Control & Safety Compliance • Quantity Take-offs & Cost Estimation<br>
+        • Stakeholder Coordination • As-built Documentation • Permit & Regulatory Compliance<br>
+        • AI-Driven Tool Development (VS Code, Copilot Chat AI Agent) • Data Analysis & Reporting
+    </div>
+
+    <h2>Additional Information</h2>
+    <div>
+        • <strong>Language:</strong> Fluent in English<br>
+        • <strong>Location:</strong> Downtown Toronto with easy access to project sites across GTA<br>
+        • <strong>Transportation:</strong> Valid Ontario G Driver's License with clean driving abstract and insured vehicle<br>
+        • <strong>Availability:</strong> Immediately available for full-time position with flexible scheduling capability<br>
+        • <strong>Work Authorization:</strong> Authorized to work in Canada
+    </div>
+</body>
+</html>

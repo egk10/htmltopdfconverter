@@ -28,7 +28,8 @@ const upload = multer({
 
 app.use(express.static(path.resolve('public')));
 
-async function createPdfFromHtmlString(htmlContent, baseName, maxPages = DEFAULT_MAX_PAGES) {
+async function createPdfFromHtmlString(htmlContent, baseName, maxPages = DEFAULT_MAX_PAGES, options = {}) {
+  const { compress = false } = options;
   const jobId = nanoid(8);
   const tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), 'html2pdf-'));
   const htmlPath = path.join(tmpDir, `upload-${jobId}.html`);
@@ -40,29 +41,39 @@ async function createPdfFromHtmlString(htmlContent, baseName, maxPages = DEFAULT
   try {
     const page = await browser.newPage();
     await page.goto('file://' + htmlPath, { waitUntil: 'networkidle0' });
-    // Multi-pass scaling: adjust until content fits within maxPages or scale becomes too small
+    // Optional compression stylesheet (typography tightening + multi-column) before measuring
+    if (compress) {
+      await page.addStyleTag({ content: `body,html{margin:0;padding:0;} body{font-size:90%; line-height:1.15;} h1,h2,h3,h4{margin:0.35em 0 0.25em;} p,li{margin:0.25em 0;} ul,ol{padding-left:1.1em; margin:0.4em 0;} section{margin:0.5em 0;} .columns, body > main, body > div:first-of-type{column-count:2; column-gap:1.2em;} table{font-size:90%;}` });
+    }
+    // Zoom-based reflow scaling: adjust zoom (reflows layout) so content height fits into maxPages.
+    let computedScale = 1;
     const enableFit = process.env.TWO_PAGE_FIT !== 'false';
+    let metaRecord = null;
     if (enableFit) {
-      await page.addStyleTag({ content: 'html,body{margin:0;padding:0;}' });
-      const printablePerPage = 1056; // approx letter usable height
-      for (let attempt = 0; attempt < 6; attempt++) {
-        const result = await page.evaluate(({ printablePerPage, maxPages }) => {
-          const styleId = 'multi-page-fit-style';
-          const totalHeight = document.documentElement.scrollHeight;
-          const limit = printablePerPage * maxPages;
-          let action = 'none';
-          if (totalHeight > limit) {
-            const scale = limit / totalHeight;
-            let st = document.getElementById(styleId);
-            if (!st) { st = document.createElement('style'); st.id = styleId; document.head.appendChild(st); }
-            st.textContent = `body{transform-origin: top left; transform: scale(${scale}); width:${(100/scale)}%;}`;
-            action = 'scaled';
-          }
-          return { totalHeight, limit, action, scaleApplied: (limit / totalHeight) };
-        }, { printablePerPage, maxPages });
-        if (result.totalHeight <= result.limit) break;
-        if (result.scaleApplied < 0.35) break; // stop before unreadable
-        await page.waitForTimeout(60);
+      const usablePerPage = 980; // approximate usable height in px after margins at 96dpi
+      const limit = usablePerPage * maxPages;
+      const metrics = await page.evaluate(() => ({ initialHeight: document.documentElement.scrollHeight }));
+      if (metrics.initialHeight > limit) {
+        const targetScale = Math.max(0.25, Math.min(1, limit / metrics.initialHeight));
+        computedScale = targetScale;
+  await page.addStyleTag({ content: `html{ zoom:${computedScale}; }` });
+  await new Promise(r => setTimeout(r, 60));
+        // Fine tune if still slightly over (single refinement pass)
+        const after = await page.evaluate(() => document.documentElement.scrollHeight);
+        if (after > limit && computedScale > 0.3) {
+          const refined = Math.max(0.25, computedScale * (limit / after) * 0.98);
+            if (refined < computedScale) {
+              computedScale = refined;
+              await page.addStyleTag({ content: `html{ zoom:${computedScale}; }` });
+              await new Promise(r => setTimeout(r, 40));
+            }
+        }
+        const finalHeight = await page.evaluate(() => document.documentElement.scrollHeight);
+        const pageEstimate = finalHeight / usablePerPage;
+        const fit = finalHeight <= limit;
+        metaRecord = { scale: computedScale, compressed: compress, initialHeight: metrics.initialHeight, finalHeight, limit, pageEstimate: +pageEstimate.toFixed(2), fit };
+      } else {
+        metaRecord = { scale: 1, compressed: compress, initialHeight: metrics.initialHeight, finalHeight: metrics.initialHeight, limit, pageEstimate: +(metrics.initialHeight / usablePerPage).toFixed(2), fit: true };
       }
     }
     const pdfBuffer = await page.pdf({
@@ -72,7 +83,11 @@ async function createPdfFromHtmlString(htmlContent, baseName, maxPages = DEFAULT
     });
     const storedPath = path.join(OUTPUT_DIR, `${baseName}-${jobId}.pdf`);
     await fs.writeFile(storedPath, pdfBuffer);
-    return { pdfBuffer, storedPath, jobId };
+    if (!metaRecord) {
+      const finalHeight = await page.evaluate(() => document.documentElement.scrollHeight);
+      metaRecord = { scale: computedScale, compressed: compress, initialHeight: finalHeight, finalHeight, limit: maxPages * 980, pageEstimate: +(finalHeight / 980).toFixed(2), fit: finalHeight <= (maxPages * 980) };
+    }
+    return { pdfBuffer, storedPath, jobId, meta: metaRecord };
   } finally {
     await browser.close();
     try { await fs.rm(tmpDir, { recursive: true, force: true }); } catch {}
@@ -87,10 +102,16 @@ app.post('/convert', upload.single('htmlFile'), async (req, res) => {
     const htmlContent = req.file.buffer.toString('utf8');
     const baseName = path.basename(req.file.originalname).replace(/\.[^.]+$/, '');
     const maxPages = parseInt(req.body.maxPages || DEFAULT_MAX_PAGES, 10);
-    const { pdfBuffer, storedPath } = await createPdfFromHtmlString(htmlContent, baseName, maxPages);
+    const compress = (req.body.compress || '').toString().toLowerCase() === 'true';
+    const { pdfBuffer, storedPath, meta } = await createPdfFromHtmlString(htmlContent, baseName, maxPages, { compress });
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader('Content-Disposition', `attachment; filename="${baseName}.pdf"`);
     res.setHeader('X-Stored-File', path.basename(storedPath));
+    if (meta) {
+      Object.entries(meta).forEach(([k,v]) => {
+        res.setHeader('X-Meta-' + k.replace(/[A-Z]/g,m=>'-'+m.toLowerCase()), String(v));
+      });
+    }
     res.send(pdfBuffer);
   } catch (err) {
     console.error(err);
@@ -105,10 +126,16 @@ app.post('/convert-text', express.json({ limit: '1mb' }), async (req, res) => {
   }
   try {
     const mp = parseInt(maxPages || DEFAULT_MAX_PAGES, 10);
-    const { pdfBuffer, storedPath } = await createPdfFromHtmlString(html, name, mp);
+    const compress = !!req.query.compress || (req.body.compress === true) || (req.body.compress === 'true');
+    const { pdfBuffer, storedPath, meta } = await createPdfFromHtmlString(html, name, mp, { compress });
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader('Content-Disposition', `attachment; filename="${name}.pdf"`);
     res.setHeader('X-Stored-File', path.basename(storedPath));
+    if (meta) {
+      Object.entries(meta).forEach(([k,v]) => {
+        res.setHeader('X-Meta-' + k.replace(/[A-Z]/g,m=>'-'+m.toLowerCase()), String(v));
+      });
+    }
     res.send(pdfBuffer);
   } catch (err) {
     console.error(err);

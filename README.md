@@ -9,7 +9,8 @@ Simple Node.js service + dual-mode frontend (upload or inline editor) to convert
 - Inline editor: edit / paste HTML, live iframe preview, export directly
 - Persistent storage: `generated/<basename>-<id>.pdf`
 - Letter page size, prints backgrounds, configurable max pages scaling
-- Heuristic iterative scaling to limit output pages (default 2) without huge white gaps
+- Optional compression mode (typography tightening + column layout + zoom) to better fit target pages
+- Metadata headers (`X-Meta-*`) expose scaling/compression decisions
 - API endpoint `/convert-text` for programmatic or editor use
 - Port auto-fallback if 3000 busy; health endpoint `/health`
 
@@ -51,14 +52,16 @@ curl -X POST http://localhost:3000/convert-text \
 ```
 
 ## Notes & Limitations
-- Scaling is heuristic: content is uniformly scaled down (CSS transform) until total height fits inside `maxPages * printableHeight` or a minimum readable scale (~0.35) is reached.
-- Extremely long documents may still exceed the page target or become small; consider real pagination for complex cases.
+- Two-phase approach now used:
+	1) Optional compression (if `compress=true` form field or body param): injects reduced spacing + multi-column hints + font/line-height tweaks.
+	2) Zoom-based reflow scaling (CSS `zoom`) attempts to fit within `maxPages` height budget.
+- If content remains taller than budget at a conservative minimum readable zoom (~0.25–0.3), PDF is produced “best effort” and headers indicate fit failure (`X-Meta-fit:false`).
+- Very long / verbose documents: consider manual pruning or true pagination logic (future enhancement) rather than aggressive shrinking.
 - Remote assets must be accessible from the server to render.
 - Active JavaScript in uploaded HTML will run; disable via code hardening if needed.
-- Letter format only (changeable in code). A4 or custom size would need adaptation (and height constant recalibration).
-- Scaling uses an approximate printable height of 1056px (Letter minus margins at 96 DPI). Adjust if you change margins or DPI context.
-- White space gaps can still occur if original markup imposes page breaks (large block elements, explicit CSS page-breaks, etc.).
- - Generated PDFs are not stored in git (ignored); only a `.gitkeep` placeholder remains.
+- Letter format only. Changing format requires adjusting usable height assumption (980px per page currently after margins).
+- White space can persist if source HTML has large structural blocks or explicit page breaks; editing original markup (removing unnecessary padding/margins) often yields better results than pure scaling.
+- Generated PDFs are not stored in git (ignored); only a `.gitkeep` placeholder remains.
 
 ## Docker
 Build image:
@@ -84,15 +87,37 @@ docker run --rm -p 3000:3000 \
 
 ## Environment Variables
 - `PORT` (default `3000`): server listen port.
-- `TWO_PAGE_FIT` (default enabled): set to `false` to disable scaling.
+- `TWO_PAGE_FIT` (default enabled): set to `false` to disable scaling/zoom.
 - `MAX_PAGES` (default `2`): default max pages target when not provided by client.
+- `PUPPETEER_EXECUTABLE_PATH` / `CHROMIUM_PATH`: override browser binary.
 
-## Scaling Algorithm Overview
-1. Load HTML into headless Chromium.
-2. Measure `document.documentElement.scrollHeight`.
-3. If height > limit (`printablePerPage * maxPages`), apply scale = limit / height via body transform.
-4. Re-measure up to 5–6 passes with short waits to allow layout stabilization.
-5. Abort if computed scale would drop below ~0.35.
+## Scaling & Compression Overview
+1. (Optional) Compression stage if client specifies `compress=true`:
+	- Injects tighter CSS: reduced body padding / margins, smaller vertical rhythm, potential multi-column hints.
+2. Initial measurement: `scrollHeight` captured.
+3. If over height budget (`usableHeightPerPage (≈980px) * maxPages`), compute candidate zoom.
+4. Apply zoom and re-measure; refine once if still over.
+5. Generate PDF; store metadata describing outcome.
+
+### Requesting Compression
+- Upload form: include field `compress=true`.
+- `/convert-text` JSON: `{ "html": "...", "compress": true }`.
+
+### Response Headers (when available)
+- `X-Meta-scale`: Final applied zoom factor (1 = none).
+- `X-Meta-compressed`: `true` if compression stylesheet injected.
+- `X-Meta-initial-height`: Height before zoom (px).
+- `X-Meta-final-height`: Height after zoom (px).
+- `X-Meta-limit`: Height budget (px) = `maxPages * 980`.
+- `X-Meta-page-estimate`: Estimated page count after scaling.
+- `X-Meta-fit`: `true/false` if final height within budget.
+
+### Improving Fit Without Over-Shrinking
+- Remove unnecessary manual page breaks.
+- Reduce large top/bottom padding in the original HTML.
+- Consolidate repeated section headings.
+- Use lists or multi-column layout for dense bullet spans.
+- Shorten verbose bullet text (content editing often beats heavier scaling).
 
 ## Future Enhancements (Ideas)
 - True pagination (splitting content across pages without shrinking)
