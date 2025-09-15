@@ -1,4 +1,139 @@
-# HTML to PDF Uploader
+
+# HTML to PDF Converter (No Coding Required)
+
+Convert your HTML files to professional, print-ready PDF documents in seconds. No coding skills needed!
+
+**Features:**
+- Upload your HTML file and instantly download a PDF
+- Use the built-in editor to paste or write HTML and preview before exporting
+- Works on Windows, Mac, Linux—no code setup required if you use Docker
+- Advanced: Use the API with `curl` or integrate into scripts
+- Output is always US Letter size, with smart scaling to fit your content into 1–2 pages
+- Optional compression for resumes and dense content
+
+---
+
+## 🚀 Quick Start (Recommended: Docker, No Coding)
+
+**1. Install Docker:**
+- [Get Docker Desktop](https://www.docker.com/products/docker-desktop/) (Windows/Mac)
+- Or: `sudo apt install docker.io` (Linux)
+
+**2. Run the Converter:**
+```bash
+docker run --rm -p 3000:3000 egk10/htmltopdf:latest
+```
+
+**3. Open in your browser:**
+- Go to [http://localhost:3000](http://localhost:3000)
+- Upload your `.html` file or use the editor
+- Download your PDF!
+
+**(Optional) Save PDFs to your computer:**
+```bash
+docker run --rm -p 3000:3000 -v $(pwd)/generated:/app/generated egk10/htmltopdf:latest
+```
+
+---
+
+## 🛠️ For Developers (Git & Local Install)
+
+**1. Clone the repo:**
+```bash
+git clone https://github.com/egk10/htmltopdfconverter.git
+cd htmltopdfconverter
+```
+**2. Install dependencies:**
+```bash
+npm install
+```
+**3. Start the server:**
+```bash
+npm start
+# Then open http://localhost:3000
+```
+
+---
+
+## 📡 API Usage (No UI, Just curl)
+
+**Convert HTML file to PDF:**
+```bash
+curl -F 'htmlFile=@yourfile.html' http://localhost:3000/convert --output result.pdf
+```
+
+**Convert HTML text (no file):**
+```bash
+curl -X POST http://localhost:3000/convert-text \
+	-H 'Content-Type: application/json' \
+	-d '{"html":"<h1>Hello</h1><p>World</p>","name":"example","maxPages":2}' --output example.pdf
+```
+
+---
+
+## 📝 How It Works
+
+1. Upload or paste your HTML.
+2. The service uses a real browser (Chromium) to render your page exactly as it would print.
+3. It automatically scales and compresses your content to fit into 1–2 Letter pages (default), so resumes and reports look professional.
+4. Download your PDF instantly.
+
+**Tips for best results:**
+- Remove unnecessary page breaks or large paddings in your HTML.
+- Use the "compress" option for dense content (like resumes).
+- For multi-page documents, adjust the "Max Pages" field.
+
+---
+
+## 🐳 Advanced Docker Usage
+
+**Build your own image (if you want latest code):**
+```bash
+git clone https://github.com/egk10/htmltopdfconverter.git
+cd htmltopdfconverter
+docker build -t htmltopdf:latest .
+docker run --rm -p 3000:3000 htmltopdf:latest
+```
+
+**Custom Chromium path:**
+```bash
+docker run --rm -p 3000:3000 \
+	-e PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium \
+	htmltopdf:latest
+```
+
+---
+
+## ⚙️ Environment Variables (Optional)
+
+- `PORT` (default `3000`): server listen port
+- `TWO_PAGE_FIT` (default enabled): set to `false` to disable scaling/zoom
+- `MAX_PAGES` (default `2`): default max pages target
+- `PUPPETEER_EXECUTABLE_PATH` / `CHROMIUM_PATH`: override browser binary
+
+---
+
+## 📖 FAQ & Troubleshooting
+
+**Q: I get a blank PDF or too many pages!**
+A: Try the "compress" option, reduce padding/margins in your HTML, or check for forced page breaks.
+
+**Q: Docker says "port already in use"?**
+A: Stop other apps using port 3000, or run with `-p 3031:3000` and open http://localhost:3031
+
+**Q: Where are my PDFs?**
+A: By default, they're in the container. Use `-v $(pwd)/generated:/app/generated` to save to your computer.
+
+**Q: Can I use this on Windows/Mac/Linux?**
+A: Yes! Docker works everywhere. No code or Node.js needed.
+
+**Q: Is my HTML safe?**
+A: Uploaded HTML is rendered in a sandboxed browser and not stored long-term. For sensitive data, run locally.
+
+---
+
+## 📜 License
+MIT License (see `LICENSE`)
 
 ![CI](https://github.com/egk10/htmltopdfconverter/actions/workflows/ci.yml/badge.svg)
 
