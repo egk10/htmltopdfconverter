@@ -62,9 +62,22 @@
     </div>
   </section>
 
+
   <footer>
     <p>Conversion occurs locally on the server. Do not upload sensitive data unless you trust this deployment.</p>
+    <span id="versionInfo" style="display:block;margin-top:0.5em;color:#888;"></span>
+  <footer>
+    <p>Conversion occurs locally on the server. Do not upload sensitive data unless you trust this deployment.</p>
+    <span id="versionInfo" style="display:block;margin-top:0.5em;color:#888;"></span>
   </footer>
+    // ...existing code...
+
+    // Version display
+    fetch('/version').then(r=>r.json()).then(data=>{
+      if(data.version) {
+        document.getElementById('versionInfo').textContent = `Version: ${data.version}`;
+      }
+    }).catch(()=>{});
 
   <script>
     const form = document.getElementById('convertForm');
@@ -182,6 +195,12 @@
         progressBar.value = 0;
       }
     });
+    // Version display
+    fetch('/version').then(r=>r.json()).then(data=>{
+      if(data.version) {
+        document.getElementById('versionInfo').textContent = `Version: ${data.version}`;
+      }
+    }).catch(()=>{});
   </script>
 </body>
 </html>

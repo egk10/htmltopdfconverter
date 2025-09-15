@@ -1,4 +1,5 @@
 import express from 'express';
+import pkg from '../package.json' assert { type: 'json' };
 import multer from 'multer';
 import { nanoid } from 'nanoid';
 import path from 'path';
@@ -143,8 +144,13 @@ app.post('/convert-text', express.json({ limit: '1mb' }), async (req, res) => {
   }
 });
 
+
 app.get('/health', (req, res) => {
   res.json({ status: 'ok' });
+});
+
+app.get('/version', (req, res) => {
+  res.json({ version: pkg.version });
 });
 
 function start(port) {
