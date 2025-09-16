@@ -83,6 +83,18 @@ curl -X POST http://localhost:3000/convert-text \
 - Use the "compress" option for dense content (like resumes).
 - For multi-page documents, adjust the "Max Pages" field.
 
+**Optimized Resume Settings (Guaranteed 2 Pages):**
+For professional resumes that must fit exactly 2 pages, use these CSS settings:
+- **Body padding**: `5mm 10mm 10mm 10mm` (reduced top margin)
+- **Base font size**: `10pt` minimum (readable professional standard)
+- **Line height**: `1.0` (maximum compression)
+- **Section margins**: `8px` between sections
+- **Header font**: `16pt` for name (reduced from 20pt)
+- **Section titles**: `11pt` for hierarchy
+- **Lateral margins**: 10mm for CLI tool (`node convert-cli.js file.html output.pdf 10`)
+
+These settings ensure professional appearance while maximizing content density for exactly 2 pages.
+
 ---
 
 ## 🐳 Advanced Docker Usage
